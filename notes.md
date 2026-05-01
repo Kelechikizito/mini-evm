@@ -1,0 +1,1 @@
+- EVM is a Virtual Machine responsible for executing Ethereum bytecode.
