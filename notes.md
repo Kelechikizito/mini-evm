@@ -1,1 +1,2 @@
 - EVM is a Virtual Machine responsible for executing Ethereum bytecode.
+- Ethereum is “special” because it is universal or Turing complete. Which means that any arbitrary program can be run on the EVM (we ignore gas and memory restrictions).
