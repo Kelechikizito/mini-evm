@@ -1,13 +1,18 @@
+import random
+
 MAXIMUM_STACK_SIZE = 1024
 
 # You define a class using the class keyword and initialize its attributes with the special __init__() method. The self parameter represents the instance of the class.
 
 
 class Stack:
+    # The __init__ dunder is the constructor method to initialize new objects of the class, in this case, empty items list.
     def __init__(self):
         self.items = []
 
-    def __str__(self):
+    def __str__(
+        self,
+    ):  # This dunder method converts the output of the stack to a string
         ws = []
         for i, item in enumerate(self.items[::-1]):
             if i == 0:
@@ -34,7 +39,6 @@ class Stack:
 
 
 kayakys_stack = Stack()
-kayakys_stack.push(1)
-kayakys_stack.push(2)
-kayakys_stack.push(3)
+for _ in range(1023):
+    kayakys_stack.push(random.randint(1, 100))
 print(kayakys_stack)
