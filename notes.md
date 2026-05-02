@@ -1,2 +1,6 @@
 - EVM is a Virtual Machine responsible for executing Ethereum bytecode.
 - Ethereum is “special” because it is universal or Turing complete. Which means that any arbitrary program can be run on the EVM (we ignore gas and memory restrictions).
+- STACK => MEMORY => STORAGE
+- A stack of plates is a good metaphor. You can add a plate or remove a plate from the top. A stack works in the same way.
+- The EVM stack has a maximum capacity of 1024 items. Every item on the stack is at max a 256-bit value (32 bytes). `MAXIMUM_STACK_SIZE = 1024`
+-
