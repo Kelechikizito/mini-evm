@@ -3,4 +3,8 @@
 - STACK => MEMORY => STORAGE
 - A stack of plates is a good metaphor. You can add a plate or remove a plate from the top. A stack works in the same way.
 - The EVM stack has a maximum capacity of 1024 items. Every item on the stack is at max a 256-bit value (32 bytes). `MAXIMUM_STACK_SIZE = 1024`
--
+- The Stack is part of the volatile machine state of the EVM, so its operations are only persistent during transaction execution
+- A common error developers run into when dealing with the Stack is stack overflow/underflow and not enough gas. This occurs when there is an exception on the Stack due to an incorrect amount of items on the Stack or insufficient gas to complete the computation.
+- ![alt text](https://www.quicknode.com/guides/assets/images/stack-27168e15399ea120a3057b9ca2beff18.png)
+- ![alt text](https://www.quicknode.com/guides/assets/images/evm-02cc29854e3ee25b72180a42836a4784.png)
+- Memory on the EVM is linear and volatile, meaning that this data is not persistent across transactions, only during a transaction's runtime. While the costs to store memory during runtime increase quadratically with size, it is still cheaper to use than Storage, which persists in its state
