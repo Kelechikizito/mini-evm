@@ -8,3 +8,5 @@
 - ![alt text](https://www.quicknode.com/guides/assets/images/stack-27168e15399ea120a3057b9ca2beff18.png)
 - ![alt text](https://www.quicknode.com/guides/assets/images/evm-02cc29854e3ee25b72180a42836a4784.png)
 - Memory on the EVM is linear and volatile, meaning that this data is not persistent across transactions, only during a transaction's runtime. While the costs to store memory during runtime increase quadratically with size, it is still cheaper to use than Storage, which persists in its state
+- ![alt text](image.png)
+- In the EVM, the memory holds an unlimited number of cells, each cell holding 1 byte, while the reading and writing of instruction/data is done using 32-bytes(a word) chunk at a time.
