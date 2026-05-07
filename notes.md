@@ -24,3 +24,8 @@
 - Program is where we store the bytecode of the current program. It can not change during execution, which makes it immutable.
 - The `stop_flag` and `revert_flag`. If one of them is True, the current execution is going to stop.
 - All opcodes have one thing in common. They manipulate the current state of the EVM.
+- In binary, the leftmost bit tells you if a number is positive or negative:
+  `0... = positive
+1... = negative`. This leftmost bit is called the sign bit.
+- ![alt text](image-2.png)
+- Jupyter is a coding environment where you write and run code in small chunks, seeing results immediately — like a calculator that also shows its working out.
