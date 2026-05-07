@@ -10,3 +10,17 @@
 - Memory on the EVM is linear and volatile, meaning that this data is not persistent across transactions, only during a transaction's runtime. While the costs to store memory during runtime increase quadratically with size, it is still cheaper to use than Storage, which persists in its state
 - ![alt text](image.png)
 - In the EVM, the memory holds an unlimited number of cells, each cell holding 1 byte, while the reading and writing of instruction/data is done using 32-bytes(a word) chunk at a time.
+- Only 3 things ever happen with memory:
+  - store
+  - load
+  - access
+- The storage is a mapping from a key to a value of 256-bit to 256-bit. The number of keys is for all practical purposes infinite. The value can be up to 32 bytes. Every value is initialized with a 0. This is like the SSD in your computer. Storage is non-volatile.
+- ![alt text](image-1.png)
+- The maximum contract size that can be deployed (stored) on Ethereum is 24,576 bytes (24KB); however, this should not be confused with the limit of data that you can store on the smart contract (which is only limited by gas, not size).
+- A slot is said to be warm if it was accessed before. Otherwise it is cold. Accessing a slot that is cold costs more gas than accessing a warm slot.
+- A specific opcode is an operation that manipulates the EVM state.
+- The program counter points to the next opcode that the EVM is going to execute
+- Stack / Memory / Storage are part of the EVM state. And are the areas where the EVM manipulates and stores data.
+- Program is where we store the bytecode of the current program. It can not change during execution, which makes it immutable.
+- The `stop_flag` and `revert_flag`. If one of them is True, the current execution is going to stop.
+- All opcodes have one thing in common. They manipulate the current state of the EVM.
