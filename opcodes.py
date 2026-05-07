@@ -135,6 +135,51 @@ EQ = 0x14
 ISZERO = 0x15
 
 
+def lt(evm):
+    a, b = evm.stack.pop(), evm.stack.pop()
+    evm.stack.push(1 if a < b else 0)
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
+def slt(evm):  # signed less than
+    a, b = evm.stack.pop(), evm.stack.pop()
+    a = unsigned_to_signed(a)
+    b = unsigned_to_signed(b)
+    evm.stack.push(1 if a < b else 0)
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
+def gt(evm):  # greater than
+    a, b = evm.stack.pop(), evm.stack.pop()
+    evm.stack.push(1 if a > b else 0)
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
+def sgt(evm):
+    a, b = evm.stack.pop(), evm.stack.pop()
+    a = unsigned_to_signed(a)
+    b = unsigned_to_signed(b)
+    evm.stack.push(1 if a > b else 0)
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
+def eq(evm):
+    a, b = evm.stack.pop(), evm.stack.pop()
+    evm.stack.push(1 if a == b else 0)
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
+def iszero(evm):
+    a = evm.stack.pop()
+    evm.stack.push(1 if a == 0 else 0)
+    evm.pc += 1
+    evm.gas_dec(3)
+
 
 # LOGIC
 AND = 0x16
@@ -143,11 +188,52 @@ XOR = 0x18
 NOT = 0x19
 
 
+def _and(evm):
+    a, b = evm.stack.pop(), evm.stack.pop()
+    evm.stack.push(a & b)
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
+def _or(evm):
+    a, b = evm.stack.pop(), evm.stack.pop()
+    evm.stack.push(a | b)
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
+def _xor(evm):
+    a, b = evm.stack.pop(), evm.stack.pop()
+    evm.stack.push(a ^ b)
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
+def _not(evm):
+    a = evm.stack.pop()
+    evm.stack.push(~a)
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
 # BIT OPERATIONS
 BYTE = 0x1A
 SHL = 0x1B
 SHR = 0x1C
 SAR = 0x1D
+
+# Get one byte from a word (32 bytes)
+
+
+def byte(evm):
+    i, x = evm.stack.pop(), evm.stack.pop()
+    if i >= 32:
+        result = 0
+    else:
+        result = (x // pow(256, 31 - i)) % 256
+    evm.stack.push(result)
+    evm.pc += 1
+    evm.gas_dec(3)
 
 
 # MISCELLANEOUS
