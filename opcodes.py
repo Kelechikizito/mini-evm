@@ -708,6 +708,17 @@ DUP14 = 0x8D
 DUP15 = 0x8E
 DUP16 = 0x8F
 
+
+# This duplicates a stack item by putting it on top of the stack
+def _dup(evm, n):
+    # make sure stack is big enough!
+    value = evm.stack[n]
+    evm.stack.push(value)
+
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
 # SWAP
 SWAP1 = 0x90
 SWAP2 = 0x91
@@ -726,12 +737,105 @@ SWAP14 = 0x9D
 SWAP15 = 0x9E
 SWAP16 = 0x9F
 
+
+def _swap(evm, n):
+    value1, value2 = evm.stack.get(0), evm.stack.get(n + 1)
+    evm.stack.set(0, value2)
+    evm.stack.set(n + 1, value1)
+
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
 # LOG
 LOG0 = 0xA0
 LOG1 = 0xA1
 LOG2 = 0xA2
 LOG3 = 0xA3
 LOG4 = 0xA4
+
+
+class Log:
+    def __init__(self, data, topic1=None, topic2=None, topic3=None, topic4=None):
+
+        self.data = data
+        self.topic1 = topic1
+        self.topic2 = topic2
+        self.topic3 = topic3
+        self.topic4 = topic4
+
+    def __str__(self):
+        return f"Log: {self.data}"
+
+
+def calc_gas(topic_count, size, memory_expansion_cost=0):
+    # 375 := static_gas
+    return 375 * topic_count + 8 * size + memory_expansion_cost
+
+
+def log0(evm):
+    offset, size = evm.stack.pop(), evm.stack.pop()
+
+    data = evm.memory.access(offset, size)
+    log = Log(data)
+    evm.append_log(log)
+
+    evm.pc += 1
+    evm.gas_dec(calc_gas(0, size))  # TODO: memory expansion cost
+
+
+def log1(evm):
+    offset, size = evm.stack.pop(), evm.stack.pop()
+    topic = evm.stack.pop().value
+
+    data = evm.memory.access(offset, size)
+    log = Log(data, topic)
+    evm.append_log(log)
+
+    evm.pc += 1
+    evm.gas_dec(calc_gas(1, size))  # TODO: memory expansion cost
+
+
+def log2(evm):
+    offset, size = evm.stack.pop(), evm.stack.pop()
+    topic1, topic2 = evm.stack.pop(), evm.stack.pop()
+
+    data = evm.memory.access(offset, size)
+    log = Log(data, topic1, topic2)
+    evm.append_log(log)
+
+    evm.pc += 1
+    evm.gas_dec(calc_gas(2, size))  # TODO: memory expansion cost
+
+
+def log3(evm):
+    offset, size = evm.stack.pop(), evm.stack.pop()
+    topic1 = evm.stack.pop()
+    topic2 = evm.stack.pop()
+    topic3 = evm.stack.pop()
+
+    data = evm.memory.access(offset, size)
+    log = Log(data, topic1, topic2, topic3)
+    evm.append_log(log)
+
+    evm.pc += 1
+    evm.gas_dec(calc_gas(3, size))  # TODO: memory expansion cost
+
+
+def log4(evm):
+    offset, size = evm.stack.pop(), evm.stack.pop()
+    topic1 = evm.stack.pop()
+    topic2 = evm.stack.pop()
+    topic3 = evm.stack.pop()
+    topic4 = evm.stack.pop()
+
+    data = evm.memory.access(offset, size)
+    log = Log(data, topic1, topic2, topic3, topic4)
+    evm.append_log(log)
+
+    evm.pc += 1
+    evm.gas_dec(calc_gas(4, size))  # TODO: memory expansion cost
+
 
 # CONTRACT
 CREATE = 0xF0
@@ -744,3 +848,13 @@ STATICCALL = 0xFA
 REVERT = 0xFD
 INVALID = 0xFE
 SELFDESTRUCT = 0xFF
+
+
+def revert(evm):
+    offset, size = evm.stack.pop(), evm.stack.pop()
+    evm.returndata = evm.memory.access(offset, size)
+
+    evm.stop_flag = True
+    evm.revert_flag = True
+    evm.pc += 1
+    evm.gas_dec(0)
