@@ -236,8 +236,57 @@ def byte(evm):
     evm.gas_dec(3)
 
 
+def shl(evm):
+    shift, value = evm.stack.pop(), evm.stack.pop()
+    evm.stack.push(value << shift)
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
+def shr(evm):
+    shift, value = evm.stack.pop(), evm.stack.pop()
+    evm.stack.push(value >> shift)
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
+def sar(evm):
+    shift, value = evm.stack.pop(), evm.stack.pop()
+
+    if shift >= 256:
+        # If shifting all bits: result = 0 (for positive) or -1 (for negative)
+        result = 0 if (value >> 255) == 0 else UINT_255_NEGATIVE_ONE
+    else:
+        # interpret as signed 256-bit integer
+        if value & (1 << 255):
+            signed_value = value - (1 << 256)
+        else:
+            signed_value = value
+
+        shifted = signed_value >> shift
+        result = shifted & UINT_256_MAX
+
+    evm.stack.push(result)
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
 # MISCELLANEOUS
 SHA3 = 0x20
+
+
+def sha3(evm):
+    offset, size = evm.stack.pop(), evm.stack.pop()
+    value = evm.memory.access(offset, size)
+    evm.stack.push(hash(str(value)))
+
+    evm.pc += 1
+
+    # calculate gas
+    minimum_word_size = (size + 31) / 32
+    dynamic_gas = 6 * minimum_word_size  # TODO: + memory_expansion_cost
+    evm.gas_dec(30 + dynamic_gas)
+
 
 # ETHEREUM STATE
 ADDRESS = 0x30
@@ -266,17 +315,272 @@ CHAINID = 0x46
 SELFBALANCE = 0x47
 BASEFEE = 0x48
 
+
+# Returns the address of the account currently executing this program
+def address(evm):
+    evm.stack.push(evm.sender)
+    evm.pc += 1
+    evm.gas_dec(2)
+
+
+def balance(evm):
+    address = evm.stack.pop()
+    evm.stack.push(99999999999)
+
+    evm.pc += 1
+    evm.gas_dec(2600)  # 100 if warm
+
+
+def origin(evm):
+    evm.stack.push(evm.sender)
+    evm.pc += 1
+    evm.gas_dec(2)
+
+
+def caller(evm):
+    evm.stack.push("0x414b60745072088d013721b4a28a0559b1A9d213")
+    evm.pc += 1
+    evm.gas_dec(2)
+
+
+def callvalue(evm):
+    evm.stack.push(evm.value)
+    evm.pc += 1
+    evm.gas_dec(2)
+
+
+def calldataload(evm):
+    i = evm.stack.pop()
+
+    delta = 0
+    if i + 32 > len(evm.calldata):
+        delta = i + 32 - len(evm.calldata)
+
+    # always has to be 32 bytes
+    # if its not we append 0x00 bytes until it is
+    calldata = evm.calldata[i : i + 32 - delta]
+    calldata += 0x00 * delta
+
+    evm.stack.push(calldata)
+    evm.pc += 1
+    evm.gas_dec(3)
+
+
+def calldatasize(evm):
+    evm.stack.push(len(evm.calldata))
+    evm.pc += 1
+    evm.gas_dec(2)
+
+
+def calldatacopy(evm):
+    destOffset = evm.stack.pop()
+    offset = evm.stack.pop()
+    size = evm.stack.pop()
+
+    calldata = evm.calldata[offset : offset + size]
+    memory_expansion_cost = evm.memory.store(destOffset, calldata)
+
+    static_gas = 3
+    minimum_word_size = (size + 31) // 32
+    dynamic_gas = 3 * minimum_word_size + memory_expansion_cost
+
+    evm.gas_dec(static_gas + dynamic_gas)
+    evm.pc += 1
+
+
+def codesize(evm):
+    evm.stack.push(len(evm.program))
+    evm.pc += 1
+    evm.gas_dec(2)
+
+
+def codecopy(evm):
+    destOffset = evm.stack.pop()
+    offset = evm.stack.pop()
+    size = evm.stack.pop()
+
+    code = evm.program[offset : offset + size]
+    memory_expansion_cost = evm.memory.store(destOffset, code)
+
+    static_gas = 3
+    minimum_word_size = (size + 31) / 32
+    dynamic_gas = 3 * minimum_word_size + memory_expansion_cost
+
+    evm.gas_dec(static_gas + dynamic_gas)
+    evm.pc += 1
+
+
+def gasprice(evm):
+    evm.stack.push(0x00)
+    evm.pc += 1
+    evm.gas_dec(2)
+
+
+def extcodesize(evm):
+    address = evm.stack.pop()
+    evm.stack.push(0x00)
+    evm.gas_dec(2600)  # 100 if warm
+    evm.pc += 1
+
+
+def extcodecopy(evm):
+    address = evm.stack.pop()
+    destOffset = evm.stack.pop()
+    offset = evm.stack.pop()
+    size = evm.stack.pop()
+
+    extcode = []  # no external code
+    memory_expansion_cost = evm.memory.store(destOffset, extcode)
+
+    # refactor this in seperate method
+    minimum_word_size = (size + 31) / 32
+    dynamic_gas = 3 * minimum_word_size + memory_expansion_cost
+    address_access_cost = 100 if warm else 2600
+
+    evm.gas_dec(dynamic_gas + address_access_cost)
+    evm.pc += 1
+
+
+def returndatasize(evm):
+    evm.stack.push(0x00)  # no return data
+    evm.pc += 1
+    evm.gas_dec(2)
+
+
+def returndatacopy(evm):
+    destOffset = evm.stack.pop()
+    offset = evm.stack.pop()
+    size = evm.stack.pop()
+
+    returndata = evm.program[offset : offset + size]
+    memory_expansion_cost = evm.memory.store(destOffset, returndata)
+
+    minimum_word_size = (size + 31) / 32
+    dynamic_gas = 3 * minimum_word_size + memory_expansion_cost
+
+    evm.gas_dec(3 + dynamic_gas)
+    evm.pc += 1
+
+
+def extcodehash(evm):
+    address = evm.stack.pop()
+    evm.stack.push(0x00)  # no code
+
+    evm.gas_dec(2600)  # 100 if warm
+    evm.pc += 1
+
+
+def blockhash(evm):
+    blockNumber = evm.stack.pop()
+    if blockNumber > 256:
+        raise Exception("Only last 256 blocks can be accessed")
+    evm.stack.push(0x1CBCFA1FFB1CA1CA8397D4F490194DB5FC0543089B9DEE43F76CF3F962A185E8)
+    evm.pc += 1
+    evm.gas_dec(20)
+
+
+def coinbase(evm):
+    evm.stack.push("0x5B38Da6a701c568545dCfcB03FcB875f56beddC4")
+    evm.pc += 1
+    evm.gas_dec(2)
+
+
+import time
+
+
+def timestamp(evm):
+    now = int(time.time())
+    now -= now % 12
+    evm.stack.push(now)
+    evm.pc += 1
+    evm.gas_dec(2)
+
+
+import random
+
+
+def prevrandao(evm):
+    # Should be from the previous block's mixHash, such as:
+    # prevMixHash = prevBlock.mixHash
+    # prevMixHash = 0xaeaec252beafe3fd35a11bdc5e3c71925f2e9e01472b7a2a290dc4619f645206
+    # here we use random int
+    prevMixHash = random.randint(0, 2**256 - 1)
+    return prevMixHash
+
+
 # POP
 POP = 0x50
+
+
+# Pops the first element from the stack
+def pop(evm):
+    evm.pc += 1
+    evm.gas_dec(2)
+    evm.stack.pop(0)
+
 
 # MEMORY
 MLOAD = 0x51
 MSTORE = 0x52
 MSTORE8 = 0x53
 
+
+# MLOAD lets us load one word (32 bytes) from memory specified by an offset. It puts that word on top of the stack.
+def mload(evm):
+    offset = evm.stack.pop()
+    value = evm.memory.load(offset)
+    evm.stack.push(value)
+    evm.pc += 1
+
+
+# MSTORE allows us to save one word to memory and MSTORE8 allows us to save one byte to memory.
+def mstore(evm):
+    offset = evm.stack.pop()
+    value = evm.stack.pop()
+    evm.memory.store(offset, value)
+    evm.pc += 1
+
+
+def mstore8(evm):
+    offset = evm.stack.pop()
+    value = evm.stack.pop()
+    evm.memory.store(offset, value)
+    evm.pc += 1
+
+
 # STORAGE
 SLOAD = 0x54
 SSTORE = 0x55
+
+
+def sload(evm):
+    key = evm.stack.pop().value
+    warm, value = evm.storage.load(key)
+    evm.stack.push(value)
+
+    evm.gas_dec(2100)  # 100 if warm
+    evm.pc += 1
+
+
+def sstore(evm):
+    key, value = evm.stack.pop(), evm.stack.pop()
+    warm, old_value = evm.storage.store(key, value)
+
+    base_dynamic_gas = 0
+
+    if value != old_value:
+        if old_value == 0:
+            base_dynamic_gas = 20000
+        else:
+            base_dynamic_gas = 2900
+
+    access_cost = 100 if warm else 2100
+    evm.gas_dec(base_dynamic_gas + access_cost)
+
+    evm.pc += 1
+
+    # TODO: do refunds
+
 
 # JUMP
 JUMP = 0x56
@@ -284,9 +588,61 @@ JUMPI = 0x57
 PC = 0x58
 JUMPDEST = 0x5B
 
+
+def jump(evm):
+    counter = evm.stack.pop()
+
+    # make sure that we jump to an JUMPDEST opcode
+    if not evm.program[counter] == JUMPDEST:
+        raise Exception("Can only jump to JUMPDEST")
+
+    evm.pc = counter
+    evm.gas_dec(8)
+
+
+def jumpi(evm):
+    counter, b = evm.stack.pop(), evm.stack.pop()
+
+    if b != 0:
+        evm.pc = counter
+    else:
+        evm.pc += 1
+
+    evm.gas_dec(10)
+
+
+def pc(evm):
+    evm.stack.push(evm.pc)
+    evm.pc += 1
+    evm.gas_dec(2)
+
+
+def jumpdest(evm):
+    evm.pc += 1
+    evm.gas_dec(1)
+
+
 # TRANSIENT STORAGE
 TLOAD = 0x5C
 TSTORE = 0x5D
+
+
+# These opcodes behave almost identically to storage but changes are discarded after every transaction.
+def tload(evm):
+    key = evm.stack.pop().value
+    warm, value = evm.storage.load(key)
+    evm.stack.push(value)
+
+    evm.gas_dec(100)
+    evm.pc += 1
+
+
+def tstore(evm):
+    key, value = evm.stack.pop(), evm.stack.pop()
+    evm.storage.store(key, value)
+    evm.gas_dec(100)
+    evm.pc += 1
+
 
 # PUSH
 PUSH1 = 0x60
@@ -321,6 +677,18 @@ PUSH29 = 0x7C
 PUSH30 = 0x7D
 PUSH31 = 0x7E
 PUSH32 = 0x7F
+
+
+def _push(evm, n):
+    evm.pc += 1
+    evm.gas_dec(3)
+
+    value = []
+    for _ in range(n):
+        value.append(evm.peek())
+        evm.pc += 1
+    evm.stack.push(int("".join(map(str, value))))
+
 
 # DUP
 DUP1 = 0x80
