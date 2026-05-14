@@ -4,7 +4,9 @@ class SimpleMemory:
     def __init__(self):
         self.memory = []
 
-    def access(self, offset, size):
+    def access(
+        self, offset, size
+    ):  # This line defines how to access the memory list; offset being the index WHILE the size being the size. An offset of 2 would mean that we get the byte stored at index 2. Combined with a size we can get a block of bytes. Offset 2 and size 5 would return the bytes from index 2 to index 6.
         return self.memory[offset : offset + size]
 
     def load(self, offset):
