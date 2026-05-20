@@ -63,7 +63,6 @@ def div(evm):
 
 
 def sdiv(evm):
-
     a, b = evm.stack.pop(), evm.stack.pop()
     sign = pos_or_neg(a * b)
     evm.stack.push(0 if b == 0 else sign * (abs(a) // abs(b)))
