@@ -33,6 +33,12 @@ class Stack:
             raise Exception("Stack underflow")
         return self.items.pop()
 
+    def get(self, index):
+        return self.items[-(index + 1)]  # reads from top
+
+    def set(self, index, value):
+        self.items[-(index + 1)] = value  # writes from top
+
     @property
     def stack(self):
         return self.items.copy()
