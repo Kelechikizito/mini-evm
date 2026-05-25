@@ -30,3 +30,4 @@
 - ![alt text](image-2.png)
 - Jupyter is a coding environment where you write and run code in small chunks, seeing results immediately — like a calculator that also shows its working out.
 - Valid Bytecode is simply a list of valid opcodes and their operands. We call a list of opcodes and their operands a program.
+- von Neumann architecture is A computer design where program instructions and data share the same memory and are processed by a single CPU.
